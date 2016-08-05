@@ -45,7 +45,7 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    // Set up video output writing
+    // Set up video output writing - quick and dirty
     cv::Size S = cv::Size((int) cap.get(CV_CAP_PROP_FRAME_WIDTH),
                   (int) cap.get(CV_CAP_PROP_FRAME_HEIGHT));
     std::string::size_type pAt = input.find_last_of('.');
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
     cv::Point target;
     cv::Rect bounding;
 
-    bool initialized;
+    bool initialized = false;
     while(getTarget(target, coords))
     {
         cv::Mat frame, grayframe, roiframe;
