@@ -42,9 +42,10 @@ int main(int argc, char** argv)
     }
 
     cv::namedWindow("frame",1);
-    cv::namedWindow("edges",2);
     cv::Point target;
+    cv::Rect bounding;
 
+    bool initialized;
     while(getTarget(target, coords))
     {
         cv::Mat frame, grayframe, roiframe;
@@ -58,31 +59,43 @@ int main(int argc, char** argv)
 
         cv::cvtColor(frame, grayframe, cv::COLOR_BGR2GRAY);
 
-        // Some magic numbers for now
-        cv::GaussianBlur(grayframe, grayframe, cv::Size(3,3), 3.0, 3.0);
+        // Extract a region of interest around the target
         cv::Rect roi(target.x - 100, target.y - 100, 200, 200);
         roiframe = grayframe(roi);
 
+        // Apply a gaussian blur
+        cv::GaussianBlur(roiframe, roiframe, cv::Size(3,3), 3.0, 3.0);
+
+        // Threshold below the average in the region of interest
+        // Ideally: Threshold more closer to the center, rather than uniformly
         cv::Mat thresholded;
-        cv::threshold(roiframe, thresholded, cv::mean(roiframe).val[0], 255, 4);
+        cv::threshold(roiframe, thresholded, cv::mean(roiframe).val[0] - 0.1*cv::mean(roiframe).val[0], 255, cv::THRESH_BINARY_INV);
 
-        cv::GaussianBlur(thresholded, thresholded, cv::Size(3,3), 3.0, 3.0);
-        cv::Canny(thresholded, thresholded, 50, 300, 3);
+        // Get the components of the image
+        cv::Mat labels, stats, centroids;
+        int n_labels = cv::connectedComponentsWithStats(thresholded, labels, stats, centroids);
+        int target_component = labels.at<int>(100,100);
 
-/*
- *
- *
-        cv::Mat nonzero;
-        cv::findNonZero(roiframe,nonzero);
+        // Extract the target component
+        cv::compare(labels, target_component, thresholded, cv::CMP_EQ);
 
-        cv::Rect bounding = cv::boundingRect(nonzero);
+        // Set the bounding box if we have a good segmentation
+        // Leveraged assumption: smoothness between frames in scale
+        if(target_component != 0) {
+            initialized = true;
 
-        cv::rectangle(frame,bounding.tl() + target - cv::Point(100,100), bounding.br() + target - cv::Point(100,100), cv::Scalar(255,0,0),2);
-*/
+            int top = stats.at<int>(target_component, cv::CC_STAT_TOP);
+            int left = stats.at<int>(target_component, cv::CC_STAT_LEFT);
+            int height = stats.at<int>(target_component, cv::CC_STAT_HEIGHT);
+            int width = stats.at<int>(target_component, cv::CC_STAT_WIDTH);
+
+            bounding = cv::Rect(left + target.x - 100, top + target.y - 100, width, height);
+        }
+        if(initialized) {
+            cv::rectangle(frame, bounding, cv::Scalar(0,255,0),1);
+        }
 
         imshow("frame", frame);
-        imshow("edges", thresholded);
-
 
         cv::waitKey();
     }
