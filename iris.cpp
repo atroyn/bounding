@@ -1,21 +1,42 @@
 #include "opencv2/opencv.hpp"
-using namespace cv;
-int main(int, char**)
+
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+int main(int argc, char** argv)
 {
-    VideoCapture cap("video1.mp4"); // open the default camera
-    if(!cap.isOpened())  // check if we succeeded
+    // Assume correctness of args etc.
+    cv::VideoCapture cap(argv[1]);
+    if(!cap.isOpened()) {
         return -1;
-    Mat edges;
-    namedWindow("edges",1);
+    }
+
+    std::ifstream coords(argv[2]);
+    if(!coords.is_open()) {
+        return -1;
+    }
+
+    cv::namedWindow("frame",1);
     for(;;)
     {
-        Mat frame;
-        cap >> frame; // get a new frame from camera
-        cvtColor(frame, edges, COLOR_BGR2GRAY);
-        GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
-        Canny(edges, edges, 40, 120, 3);
-        imshow("edges", edges);
-        if(waitKey(30) >= 0) break;
+        cv::Mat frame;
+        cap >> frame;
+
+        std::string line;
+        std::getline(coords, line);
+        std::istringstream sstream(line);
+
+        double x, y;
+
+        sstream >> x;
+        sstream >> y;
+
+        cv::circle(frame, cv::Point(x,y),10,cv::Scalar(0,255,0),2);
+        imshow("frame", frame);
+
+        cv::waitKey();
     }
     return 0;
 }
