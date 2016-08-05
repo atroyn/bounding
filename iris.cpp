@@ -58,22 +58,27 @@ int main(int argc, char** argv)
 
         cv::cvtColor(frame, grayframe, cv::COLOR_BGR2GRAY);
 
-        // Some magic numbers for now
+/*        // Some magic numbers for now
         cv::GaussianBlur(grayframe, grayframe, cv::Size(3,3), 1.5, 1.5);
-        cv::Canny(grayframe, grayframe, 40, 150, 3);
+        cv::Canny(grayframe, grayframe, 40, 150, 3);*/
 
         cv::Rect roi(target.x - 100, target.y - 100, 200, 200);
         roiframe = grayframe(roi);
 
+        cv::Mat thresholded;
+        cv::threshold(roiframe, thresholded, 150, 255, 1);
+
+/*
         cv::Mat nonzero;
         cv::findNonZero(roiframe,nonzero);
 
         cv::Rect bounding = cv::boundingRect(nonzero);
 
         cv::rectangle(frame,bounding.tl() + target - cv::Point(100,100), bounding.br() + target - cv::Point(100,100), cv::Scalar(255,0,0),2);
+*/
 
         imshow("frame", frame);
-        imshow("edges", roiframe);
+        imshow("edges", thresholded);
 
 
         cv::waitKey();
