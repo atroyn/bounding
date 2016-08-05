@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 bool getTarget(cv::Point &point, std::ifstream &coords) {
 
@@ -46,20 +47,33 @@ int main(int argc, char** argv)
 
     while(getTarget(target, coords))
     {
-        cv::Mat frame, grayframe;
+        cv::Mat frame, grayframe, roiframe;
         cap >> frame;
 
+        // Sequence 2 has more centers than frames
+        if(frame.empty())
+        {
+            break;
+        }
 
         cv::cvtColor(frame, grayframe, cv::COLOR_BGR2GRAY);
 
-        cv::GaussianBlur(grayframe, grayframe, cv::Size(7,7), 1.5, 1.5);
-        cv::Canny(grayframe, grayframe, 30, 120, 3);
+        // Some magic numbers for now
+        cv::GaussianBlur(grayframe, grayframe, cv::Size(3,3), 1.5, 1.5);
+        cv::Canny(grayframe, grayframe, 40, 150, 3);
 
-        cv::circle(frame, target,10,cv::Scalar(0,255,0),2);
+        cv::Rect roi(target.x - 100, target.y - 100, 200, 200);
+        roiframe = grayframe(roi);
 
+        cv::Mat nonzero;
+        cv::findNonZero(roiframe,nonzero);
+
+        cv::Rect bounding = cv::boundingRect(nonzero);
+
+        cv::rectangle(frame,bounding.tl() + target - cv::Point(100,100), bounding.br() + target - cv::Point(100,100), cv::Scalar(255,0,0),2);
 
         imshow("frame", frame);
-        imshow("edges", grayframe);
+        imshow("edges", roiframe);
 
 
         cv::waitKey();
