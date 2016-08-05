@@ -58,17 +58,20 @@ int main(int argc, char** argv)
 
         cv::cvtColor(frame, grayframe, cv::COLOR_BGR2GRAY);
 
-/*        // Some magic numbers for now
-        cv::GaussianBlur(grayframe, grayframe, cv::Size(3,3), 1.5, 1.5);
-        cv::Canny(grayframe, grayframe, 40, 150, 3);*/
-
+        // Some magic numbers for now
+        cv::GaussianBlur(grayframe, grayframe, cv::Size(3,3), 3.0, 3.0);
         cv::Rect roi(target.x - 100, target.y - 100, 200, 200);
         roiframe = grayframe(roi);
 
         cv::Mat thresholded;
-        cv::threshold(roiframe, thresholded, 150, 255, 1);
+        cv::threshold(roiframe, thresholded, cv::mean(roiframe).val[0], 255, 4);
+
+        cv::GaussianBlur(thresholded, thresholded, cv::Size(3,3), 3.0, 3.0);
+        cv::Canny(thresholded, thresholded, 50, 300, 3);
 
 /*
+ *
+ *
         cv::Mat nonzero;
         cv::findNonZero(roiframe,nonzero);
 
