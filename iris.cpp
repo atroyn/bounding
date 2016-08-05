@@ -30,14 +30,35 @@ bool getTarget(cv::Point &point, std::ifstream &coords) {
 
 int main(int argc, char** argv)
 {
+
+
     // Assume correctness of args.
-    cv::VideoCapture cap(argv[1]);
+    const std::string input = argv[1];
+
+    cv::VideoCapture cap(input);
     if(!cap.isOpened()) {
         return -1;
     }
 
     std::ifstream coords(argv[2]);
     if(!coords.is_open()) {
+        return -1;
+    }
+
+    // Set up video output writing
+    cv::Size S = cv::Size((int) cap.get(CV_CAP_PROP_FRAME_WIDTH),
+                  (int) cap.get(CV_CAP_PROP_FRAME_HEIGHT));
+    std::string::size_type pAt = input.find_last_of('.');
+    const std::string outname = input.substr(0, pAt) + ".out.mp4";
+    int ex = static_cast<int>(cap.get(CV_CAP_PROP_FOURCC));
+    char EXT[] = {(char)(ex & 0XFF) , (char)((ex & 0XFF00) >> 8),(char)((ex & 0XFF0000) >> 16),
+                  (char)((ex & 0XFF000000) >> 24), 0};
+
+    cv::VideoWriter output;
+    output.open(outname, ex, cap.get(CV_CAP_PROP_FPS), S, true);
+
+    if (!output.isOpened())
+    {
         return -1;
     }
 
@@ -96,8 +117,9 @@ int main(int argc, char** argv)
         }
 
         imshow("frame", frame);
+        output << frame;
 
-        cv::waitKey();
+        cv::waitKey(1);
     }
     return 0;
 }
